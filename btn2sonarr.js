@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         BTN 2 Sonarr
 // @version      1.0
-// @description  Add shows directly to sonarr via the BTN tv show pages.
+// @description  Add shows directly to sonarr via the BTN tv show pages and V3 api.
 // @author       Prism16
 // @match        https://broadcasthe.net/series.php?id=*
 // @icon         https://broadcasthe.net/favicon.ico
@@ -14,14 +14,18 @@
 
 (function() {
     'use strict';
+
+
     //  ADD ALL SONARR VARIABLES HERE
-    window.sonarrApi = '##########';
-    window.sonarrUrl = 'https://######.#####/######';
-    window.sonarrpath = '/####/#####/####/####/#####';
+    window.sonarrApi = '########################';
+    window.sonarrUrl = 'https://##########.#######/sonarr';
+    window.sonarrpath = '/#####/########/######/###/#########';
     window.sonarrprofileid = '#';
-    window.sonarrlanguageid = '#';  // 1
+    window.sonarrlanguageid = '#'; // 1
     //  ADD ALL SONARR VARIABLES HERE
 
+
+            // FIND TVDB URL ON BTN TV SHOW PAGE
     function searchTVDBUrl() {
         let aElements = document.getElementsByTagName('a');
         for (let i = 0; i < aElements.length; i++) {
@@ -32,55 +36,7 @@
         }
     }
 
-function addToSonarr(result) {
-    let fullPath = window.sonarrpath + '/' + result[0].title;
-
-    let seriesData = {
-        title: result[0].title,
-        seasons: result[0].seasons,
-        path: fullPath,
-        qualityProfileId: window.sonarrprofileid,
-        languageProfileId: window.sonarrlanguageid,
-        images: result[0].images,
-        tvdbId: result[0].tvdbId,
-        titleSlug: result[0].titleSlug,
-        monitored: true,
-        addOptions: {
-            ignoreEpisodesWithFiles: false,
-            ignoreEpisodesWithoutFiles: false,
-            searchForMissingEpisodes: true
-        }
-    };
-
-    let sonarrAddSeriesUrl = `${window.sonarrUrl}/api/v3/series/`;
-    GM_xmlhttpRequest({
-        method: "POST",
-        url: sonarrAddSeriesUrl,
-        data: JSON.stringify(seriesData),
-        headers: {
-            "Content-Type": "application/json",
-            "X-Api-Key": window.sonarrApi
-        },
-        onload: function(response) {
-            console.log(response);
-            let responseData = JSON.parse(response.responseText);
-            if (responseData.title === result[0].title) {
-                GM.notification({
-                    text: `${result[0].title} has been added successfully..`,
-                    title: 'BTN 2 Sonarr',
-                    timeout: 5000
-                });
-            } else {
-                GM.notification({
-                    text: `Failed to add ${result[0].title}. Please try again.`,
-                    title: 'BTN 2 Sonarr',
-                    timeout: 2500
-                });
-            }
-        }
-    });
-}
-
+           // PARSE THE TVDB ID FROM TVDB.COM AND PERFORM TVSHOW LOOKUP WITH SONARR TO GATHER RESPONSE JSON
     function getTVDBIdAndPassToSonarr() {
         let tvdbUrl = searchTVDBUrl();
         if (tvdbUrl) {
@@ -103,13 +59,9 @@ function addToSonarr(result) {
                             },
                             onload: function(response) {
                                 let result = JSON.parse(response.responseText);
-                                console.log(result);
-
                                 let linkbox = document.querySelector('#content > div.thin > div.linkbox');
                                 let aElement = document.createElement('a');
-
                                 aElement.href = '#';
-                              //  aElement.target = '_blank';
                                 if (result[0] && result[0].path) {
                                     aElement.textContent = '[View In Sonarr]';
                                     aElement.style.color = "#b1fcb1";
@@ -139,5 +91,56 @@ function addToSonarr(result) {
             console.log('No TVDB URL found on this page');
         }
     }
+
+
+              // ADD THE SHOW USING THE LOOKUP RESPONSE JSON / VARIABLES AND THE SONARR V3 API
+    function addToSonarr(result) {
+    let fullPath = window.sonarrpath + '/' + result[0].title;
+    let seriesData = {
+        title: result[0].title,
+        seasons: result[0].seasons,
+        path: fullPath,
+        qualityProfileId: window.sonarrprofileid,
+        languageProfileId: window.sonarrlanguageid,
+        images: result[0].images,
+        tvdbId: result[0].tvdbId,
+        titleSlug: result[0].titleSlug,
+        monitored: true,
+        addOptions: {
+            ignoreEpisodesWithFiles: false,
+            ignoreEpisodesWithoutFiles: false,
+            searchForMissingEpisodes: true
+        }
+    };
+    let sonarrAddSeriesUrl = `${window.sonarrUrl}/api/v3/series/`;
+    GM_xmlhttpRequest({
+        method: "POST",
+        url: sonarrAddSeriesUrl,
+        data: JSON.stringify(seriesData),
+        headers: {
+            "Content-Type": "application/json",
+            "X-Api-Key": window.sonarrApi
+        },
+        onload: function(response) {
+            let responseData = JSON.parse(response.responseText);
+            if (responseData.title === result[0].title) {
+                GM.notification({
+                    text: `Please Click This Notification To Refresh The Page..`,
+                    title: 'BTN2Sonarr - Added',
+                    timeout: 7500,
+                    onclick: function() {
+                        location.reload();
+            }
+        });
+    } else {
+                GM.notification({
+                    text: `Failed to add ${result[0].title}. Possibly Already Added..`,
+                    title: 'BTN 2 Sonarr',
+                    timeout: 2500
+                });
+            }
+        }
+    });
+}
     getTVDBIdAndPassToSonarr();
 })();
