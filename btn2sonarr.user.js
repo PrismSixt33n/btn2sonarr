@@ -217,3 +217,4 @@ if (url.startsWith("https://broadcasthe.net/user.php?action=edit")) {
 } else if (url.startsWith("https://broadcasthe.net/series.php?id=")) {
     getTVDBIdAndPassToSonarr();
 }
+    })();
