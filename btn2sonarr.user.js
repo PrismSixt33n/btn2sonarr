@@ -89,6 +89,15 @@
     let ulNavigation = document.querySelector('#slider ul.navigation');
     slider.insertBefore(panel, ulNavigation);
 
+    let img = document.createElement('img');
+    img.src = 'https://ptpimg.me/s9yms4.png';
+    img.style.width = '140px';
+    img.style.position = 'absolute';
+    img.style.bottom = '0';
+    img.style.right = '5%';
+
+    sonarrSettings.appendChild(img);
+
     window.sonarrApi = GM_getValue('Sonarr API Key', '');
     window.sonarrUrl = GM_getValue('Sonarr URL', '');
     window.sonarrpath = GM_getValue('Sonarr Root Path', '');
