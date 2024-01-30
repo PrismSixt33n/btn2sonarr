@@ -118,7 +118,7 @@
                     let spanElement = doc.querySelector("#series_basic_info > ul > li:nth-child(1) > span");
                     if (spanElement) {
                         let tvdbId = spanElement.textContent;
-                        let sonarrSeriesLookupUrl = `${window.sonarrUrl}/api/series/lookup?term=tvdb:${tvdbId}`;
+                        let sonarrSeriesLookupUrl = `${window.sonarrUrl}/api/v3/series/lookup?term=tvdb:${tvdbId}`;
                         GM_xmlhttpRequest({
                             method: "GET",
                             url: sonarrSeriesLookupUrl,
@@ -217,4 +217,4 @@ if (url.startsWith("https://broadcasthe.net/user.php?action=edit")) {
 } else if (url.startsWith("https://broadcasthe.net/series.php?id=")) {
     getTVDBIdAndPassToSonarr();
 }
-    })();
+})();
