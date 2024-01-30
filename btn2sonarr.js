@@ -4,28 +4,98 @@
 // @description  Add shows directly to sonarr via the BTN tv show pages and V3 api.
 // @author       Prism16
 // @match        https://broadcasthe.net/series.php?id=*
+// @match        https://broadcasthe.net/user.php?action=edit*
 // @icon         https://broadcasthe.net/favicon.ico
 // @require      https://cdn.jsdelivr.net/gh/sizzlemctwizzle/GM_config@43fd0fe4de1166f343883511e53546e87840aeaf/gm_config.js
 // @require      https://code.jquery.com/jquery-3.5.1.min.js
 // @grant        GM.xmlHttpRequest
 // @grant        GM.notification
 // @grant        GM_xmlhttpRequest
+// @grant        GM_setValue
+// @grant        GM_getValue
 // ==/UserScript==
 
 (function() {
     'use strict';
 
+    window.sonarrApi = GM_getValue('Sonarr API Key', '');
+    window.sonarrUrl = GM_getValue('Sonarr URL', '');
+    window.sonarrpath = GM_getValue('Sonarr Root Path', '');
+    window.sonarrprofileid = GM_getValue('Profile ID', '');
+    window.sonarrlanguageid = GM_getValue('Language ID', '');
 
-    //  ADD ALL SONARR VARIABLES HERE
-    window.sonarrApi = '########################';
-    window.sonarrUrl = 'https://##########.#######/sonarr';
-    window.sonarrpath = '/#####/########/######/###/#########';
-    window.sonarrprofileid = '#';
-    window.sonarrlanguageid = '#'; // 1
-    //  ADD ALL SONARR VARIABLES HERE
+    function settingsPanel() {
+    let panel = document.createElement('div');
+    panel.style.display = 'panel';
+    let box = document.createElement('div');
+    box.className = 'box';
+    let headDiv = document.createElement('div');
+    headDiv.className = 'head';
+    headDiv.innerHTML = '<b>BTN 2 SONARR SETTINGS</b>';
+    headDiv.style.textAlign = 'center';
+    let sonarrSettings = document.createElement('div');
+    sonarrSettings.id = 'sonarrSettings';
+    sonarrSettings.className = 'scroll';
 
+    let labels = ['Sonarr API Key', 'Sonarr URL', 'Sonarr Root Path', 'Profile ID', 'Language ID'];
+    let placeholders = ['API Key Goes Here', 'https://blah.blah/sonarr', '/home/blah/blah', '#', '#'];
 
-            // FIND TVDB URL ON BTN TV SHOW PAGE
+    for (let i = 0; i < 5; i++) {
+        let label = document.createElement('label');
+        label.innerHTML = labels[i];
+        label.style.fontWeight = 'bold';
+        sonarrSettings.appendChild(label);
+        let input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = placeholders[i];
+        input.style.marginLeft = '10px';
+
+        if (i < 3) {
+            input.style.width = '300px';
+        }
+        if (i >= 3) {
+            input.style.width = '50px';
+        }
+
+        input.value = GM_getValue(labels[i], '');
+
+        sonarrSettings.appendChild(input);
+        sonarrSettings.appendChild(document.createElement('br'));
+        sonarrSettings.appendChild(document.createElement('br'));
+    }
+
+    let confirmButton = document.createElement('button');
+    confirmButton.innerHTML = 'Confirm';
+    confirmButton.addEventListener('click', function() {
+
+        let inputs = sonarrSettings.getElementsByTagName('input');
+        for (let i = 0; i < inputs.length; i++) {
+            GM_setValue(labels[i], inputs[i].value);
+        }
+
+        GM.notification({
+            text: 'The values have been saved successfully!',
+            title: 'Settings Saved',
+            timeout: 4000
+        });
+    });
+
+    sonarrSettings.appendChild(confirmButton);
+
+    box.appendChild(headDiv);
+    box.appendChild(sonarrSettings);
+    panel.appendChild(box);
+    let slider = document.querySelector('#slider');
+    let ulNavigation = document.querySelector('#slider ul.navigation');
+    slider.insertBefore(panel, ulNavigation);
+
+    window.sonarrApi = GM_getValue('Sonarr API Key', '');
+    window.sonarrUrl = GM_getValue('Sonarr URL', '');
+    window.sonarrpath = GM_getValue('Sonarr Root Path', '');
+    window.sonarrprofileid = GM_getValue('Profile ID', '');
+    window.sonarrlanguageid = GM_getValue('Language ID', '');
+}
+
     function searchTVDBUrl() {
         let aElements = document.getElementsByTagName('a');
         for (let i = 0; i < aElements.length; i++) {
@@ -36,7 +106,6 @@
         }
     }
 
-           // PARSE THE TVDB ID FROM TVDB.COM AND PERFORM TVSHOW LOOKUP WITH SONARR TO GATHER RESPONSE JSON
     function getTVDBIdAndPassToSonarr() {
         let tvdbUrl = searchTVDBUrl();
         if (tvdbUrl) {
@@ -92,8 +161,6 @@
         }
     }
 
-
-              // ADD THE SHOW USING THE LOOKUP RESPONSE JSON / VARIABLES AND THE SONARR V3 API
     function addToSonarr(result) {
     let fullPath = window.sonarrpath + '/' + result[0].title;
     let seriesData = {
@@ -142,5 +209,12 @@
         }
     });
 }
+
+var url = window.location.href;
+
+if (url.startsWith("https://broadcasthe.net/user.php?action=edit")) {
+    settingsPanel();
+} else if (url.startsWith("https://broadcasthe.net/series.php?id=")) {
     getTVDBIdAndPassToSonarr();
+}
 })();
