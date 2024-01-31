@@ -1,3 +1,5 @@
+![alt text](https://ptpimg.me/s9yms4.png)
+
 Now I know some of you use PTP to Radarr, well I always wondered if the functionality of the script could be implemented at BTN. I tried for a long time to fork the actual codebase for PTP to Radarr to get it to work with BTN / TV Shows but I just could not get it to work.
 After learning a few bits of JavaScript I decided I would try and implement it myself which I achieved in someway even if not exactly like PTP to Radarr as first intended.
 
