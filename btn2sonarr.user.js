@@ -3,6 +3,8 @@
 // @version      1.2
 // @description  Add shows directly to sonarr via the BTN tv show pages and V3 api.
 // @author       Prism16
+// @downloadURL  https://github.com/PrismSixt33n/btn2sonarr/raw/main/btn2sonarr.user.js
+// @updateURL    https://github.com/PrismSixt33n/btn2sonarr/raw/main/btn2sonarr.user.js
 // @match        https://broadcasthe.net/series.php?id=*
 // @match        https://broadcasthe.net/user.php?action=edit*
 // @icon         https://broadcasthe.net/favicon.ico
