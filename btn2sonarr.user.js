@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         BTN 2 Sonarr
-// @version      1.1
+// @version      1.2
 // @description  Add shows directly to sonarr via the BTN tv show pages and V3 api.
 // @author       Prism16
 // @match        https://broadcasthe.net/series.php?id=*
@@ -10,6 +10,7 @@
 // @require      https://code.jquery.com/jquery-3.5.1.min.js
 // @grant        GM.xmlHttpRequest
 // @grant        GM.notification
+// @grant        GM_notification
 // @grant        GM_xmlhttpRequest
 // @grant        GM_setValue
 // @grant        GM_getValue
@@ -23,6 +24,7 @@
     window.sonarrpath = GM_getValue('Sonarr Root Path', '');
     window.sonarrprofileid = GM_getValue('Profile ID', '');
     window.sonarrlanguageid = GM_getValue('Language ID', '');
+    window.sonarrsearch = GM_getValue('Search', '');
 
 function settingsPanel() {
     let panel = document.createElement('div');
@@ -78,6 +80,23 @@ function settingsPanel() {
         sonarrSettings.appendChild(document.createElement('br'));
     }
 
+    let searchLabel = document.createElement('label');
+    searchLabel.innerHTML = 'Search On Add';
+    searchLabel.style.fontWeight = 'bold';
+    sonarrSettings.appendChild(searchLabel);
+
+    let searchInput = document.createElement('input');
+    searchInput.type = 'checkbox';
+    searchInput.style.marginLeft = '10px';
+    searchInput.checked = GM_getValue('Search', false);
+    searchInput.addEventListener('change', function() {
+        GM_setValue('Search', this.checked);
+    });
+
+    sonarrSettings.appendChild(searchInput);
+    sonarrSettings.appendChild(document.createElement('br'));
+    sonarrSettings.appendChild(document.createElement('br'));
+
     let confirmButton = document.createElement('button');
     confirmButton.innerHTML = 'Confirm';
     confirmButton.addEventListener('click', function() {
@@ -117,8 +136,8 @@ function settingsPanel() {
     window.sonarrpath = GM_getValue('Sonarr Root Path', '');
     window.sonarrprofileid = GM_getValue('Profile ID', '');
     window.sonarrlanguageid = GM_getValue('Language ID', '');
+    window.sonarrsearch = GM_getValue('Search', false);
 }
-
 function profileids() {
     let sonarrApi = GM_getValue('Sonarr API Key', '');
     let sonarrUrl = GM_getValue('Sonarr URL', '');
@@ -357,7 +376,7 @@ function createTable(obj) {
         }
     }
 
-    function addToSonarr(result) {
+function addToSonarr(result) {
     let fullPath = window.sonarrpath + '/' + result[0].title;
     let seriesData = {
         title: result[0].title,
@@ -372,7 +391,7 @@ function createTable(obj) {
         addOptions: {
             ignoreEpisodesWithFiles: false,
             ignoreEpisodesWithoutFiles: false,
-            searchForMissingEpisodes: true
+            searchForMissingEpisodes: window.sonarrsearch
         }
     };
     let sonarrAddSeriesUrl = `${window.sonarrUrl}/api/v3/series/`;
@@ -387,7 +406,7 @@ function createTable(obj) {
         onload: function(response) {
             let responseData = JSON.parse(response.responseText);
             if (responseData.title === result[0].title) {
-                GM.notification({
+                GM_notification({
                     text: `Please Click This Notification To Refresh The Page..`,
                     title: 'BTN2Sonarr - Added',
                     timeout: 7500,
@@ -396,7 +415,7 @@ function createTable(obj) {
             }
         });
     } else {
-                GM.notification({
+                GM_notification({
                     text: `Failed to add ${result[0].title}. Possibly Already Added..`,
                     title: 'BTN 2 Sonarr',
                     timeout: 2500
