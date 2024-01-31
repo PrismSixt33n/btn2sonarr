@@ -5,11 +5,11 @@ After learning a few bits of JavaScript I decided I would try and implement it m
 
 It doesn't have all the functionality that PTP to Radarr has but its easy to setup and it works just fine for a basic user case. I'm no JavaScript pro, far from it so the code could be cleaner and more compressed no doubt but it's here and it works.
 
-First on installing, visit your edit profile page on BTN, you will see a new settings dialogue to enter the BTN 2 Sonarr settings which are pretty self explanatory.
+* First on installing, visit your edit profile page on BTN, you will see a new settings dialogue to enter the BTN 2 Sonarr settings which are pretty self explanatory.
 
-As of v1.2 this now includes an option as to whether you want to "Search On Add" or not.
+* As of v1.2 this now includes an option as to whether you want to "Search On Add" or not.
 
-If you need help with the profile IDs enter your URL and API key, hit save then hit the helper buttons which will list your profile IDs for you to enter.
+* If you need help with the profile IDs enter your URL and API key, hit save then hit the helper buttons which will list your profile IDs for you to enter.
 
 After adding all your Sonarr variables hit save and check the notification for confirmation they saved ok. Then take yourself off to a page for a TV show.
 On loading the page, the script scrapes the TVDB URL then TVDB ID from the page, probes the Sonarr API using this to see if the show is present already.
