@@ -1,9 +1,9 @@
-Now I know some of you use PTP to Radarr, well I always wondered if the functionality of the script could be implemented here at BTN. I tried for a long time to fork the actual codebase for PTP to Radarr to get it to work with BTN / TV Shows but I just could not get it to work.
+Now I know some of you use PTP to Radarr, well I always wondered if the functionality of the script could be implemented at BTN. I tried for a long time to fork the actual codebase for PTP to Radarr to get it to work with BTN / TV Shows but I just could not get it to work.
 After learning a few bits of JavaScript I decided I would try and implement it myself which I achieved in someway even if not exactly like PTP to Radarr as first intended.
 
 It doesn't have all the functionality that PTP to Radarr has but its easy to setup and it works just fine for a basic user case. I'm no JavaScript pro, far from it so the code could be cleaner and more compressed no doubt but it's here and it works.
 
-First on installing, visit your edit profile page here on BTN, you will see a new settings dialogue to enter the BTN 2 Sonarr settings which are pretty self explanatory.
+First on installing, visit your edit profile page on BTN, you will see a new settings dialogue to enter the BTN 2 Sonarr settings which are pretty self explanatory.
 
 As of v1.2 this now includes an option as to whether you want to "Search On Add" or not.
 
