@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         BTN 2 Sonarr
-// @version      1.0
+// @version      1.1
 // @description  Add shows directly to sonarr via the BTN tv show pages and V3 api.
 // @author       Prism16
 // @match        https://broadcasthe.net/series.php?id=*
@@ -24,7 +24,7 @@
     window.sonarrprofileid = GM_getValue('Profile ID', '');
     window.sonarrlanguageid = GM_getValue('Language ID', '');
 
-    function settingsPanel() {
+function settingsPanel() {
     let panel = document.createElement('div');
     panel.style.display = 'panel';
     let box = document.createElement('div');
@@ -55,6 +55,20 @@
         }
         if (i >= 3) {
             input.style.width = '50px';
+            let questionMark = document.createElement('b');
+            questionMark.innerHTML = ' - [Helper]';
+            questionMark.style.cursor = 'pointer';
+            sonarrSettings.appendChild(questionMark);
+
+            if (i === 3) {
+                questionMark.onclick = function() {
+                    profileids();
+                };
+            } else if (i === 4) {
+                questionMark.onclick = function() {
+                    languageids();
+                };
+            }
         }
 
         input.value = GM_getValue(labels[i], '');
@@ -105,6 +119,97 @@
     window.sonarrlanguageid = GM_getValue('Language ID', '');
 }
 
+function profileids() {
+    let sonarrApi = GM_getValue('Sonarr API Key', '');
+    let sonarrUrl = GM_getValue('Sonarr URL', '');
+
+    if (!sonarrApi || !sonarrUrl) {
+        GM_notification({
+            text: 'ADD URL And API Key, Save and try again.',
+            title: 'Missing Information',
+            timeout: 4000
+        });
+    } else {
+        let apiUrl = sonarrUrl + '/api/v3/qualityprofile?apikey=' + sonarrApi;
+        console.log(apiUrl);
+
+        let xhr = new XMLHttpRequest();
+        xhr.open("GET", apiUrl, true);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                let data = JSON.parse(xhr.responseText);
+                let names = filterByName(data);
+                let ids = filterById(data);
+                let output = {};
+                for (let i = 0; i < names.length; i++) {
+                    let name = names[i];
+                    let id = ids[i];
+                    output[name.name] = id.id;
+                }
+                createModal(output);
+            }
+        }
+        xhr.send();
+    }
+}
+
+    function languageids() {
+    let sonarrApi = GM_getValue('Sonarr API Key', '');
+    let sonarrUrl = GM_getValue('Sonarr URL', '');
+
+    if (!sonarrApi || !sonarrUrl) {
+        GM_notification({
+            text: 'ADD URL And API Key, Save and try again.',
+            title: 'Missing Information',
+            timeout: 4000
+        });
+    } else {
+        let apiUrl = sonarrUrl + '/api/v3/languageprofile?apikey=' + sonarrApi;
+        console.log(apiUrl);
+
+        let xhr = new XMLHttpRequest();
+        xhr.open("GET", apiUrl, true);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                let data = JSON.parse(xhr.responseText);
+                let names = filterByName(data);
+                let ids = filterById(data);
+                let output = {};
+                for (let i = 0; i < names.length; i++) {
+                    let name = names[i];
+                    let id = ids[i];
+                    output[name.name] = id.id;
+                }
+                createModal(output);
+            }
+        }
+        xhr.send();
+    }
+}
+
+    function filterByName(data) {
+    let filtered = [];
+    for (let i = 0; i < data.length; i++) {
+        let element = data[i];
+        if (element.hasOwnProperty("name")) {
+            filtered.push(element);
+        }
+    }
+    return filtered;
+}
+
+function filterById(data) {
+    let filtered = [];
+    for (let i = 0; i < data.length; i++) {
+        let element = data[i];
+        if (element.hasOwnProperty("id")) {
+            filtered.push(element);
+        }
+    }
+    return filtered;
+}
+
+
     function searchTVDBUrl() {
         let aElements = document.getElementsByTagName('a');
         for (let i = 0; i < aElements.length; i++) {
@@ -114,6 +219,88 @@
             }
         }
     }
+
+    function createModal(obj) {
+    let modal = document.createElement("div");
+    modal.style.position = "fixed";
+    modal.style.zIndex = "1";
+    modal.style.left = "0";
+    modal.style.top = "0";
+    modal.style.width = "100%";
+    modal.style.height = "100%";
+    modal.style.overflow = "auto";
+    modal.style.backgroundColor = "rgba(0,0,0,0.4)";
+
+    let modalContent = document.createElement("div");
+    modalContent.style.backgroundColor = "#000";
+    modalContent.style.color = "#fff";
+    modalContent.style.margin = "15% auto";
+    modalContent.style.padding = "0px";
+    modalContent.style.border = "1px solid #888";
+    modalContent.style.width = "80%";
+    modalContent.style.maxWidth = "300px";
+    modalContent.style.borderRadius = "5px";
+
+    let closeButton = document.createElement("button");
+    closeButton.textContent = "Close";
+    closeButton.style.backgroundColor = "transparent";
+    closeButton.style.color = "white";
+    closeButton.style.position = "absolute";
+    closeButton.style.top = "0px";
+    closeButton.style.right = "0px";
+    closeButton.style.padding = "5px 10px";
+    closeButton.onclick = function() {
+        modal.style.display = "none";
+    };
+    modalContent.style.position = "relative";
+    modalContent.appendChild(closeButton);
+
+    let table = createTable(obj);
+    table.style.textAlign = "left";
+
+    modalContent.appendChild(table);
+    modal.appendChild(modalContent);
+
+    document.body.appendChild(modal);
+}
+
+function createTable(obj) {
+    let table = document.createElement("table");
+    table.style.width = "100%";
+    table.style.borderCollapse = "collapse";
+
+    let thead = document.createElement("thead");
+    let tr = document.createElement("tr");
+
+    let th1 = document.createElement("th");
+    th1.textContent = "Name";
+    tr.appendChild(th1);
+
+    let th2 = document.createElement("th");
+    th2.textContent = "ID";
+    tr.appendChild(th2);
+
+    thead.appendChild(tr);
+    table.appendChild(thead);
+
+    let tbody = document.createElement("tbody");
+    for (let key in obj) {
+        let tr = document.createElement("tr");
+
+        let td1 = document.createElement("td");
+        td1.textContent = key;
+        tr.appendChild(td1);
+
+        let td2 = document.createElement("td");
+        td2.textContent = obj[key];
+        tr.appendChild(td2);
+
+        tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+
+    return table;
+}
 
     function getTVDBIdAndPassToSonarr() {
         let tvdbUrl = searchTVDBUrl();
