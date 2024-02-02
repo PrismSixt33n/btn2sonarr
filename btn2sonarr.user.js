@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         BTN 2 Sonarr
-// @version      1.2
+// @version      1.3
 // @description  Add shows directly to sonarr via the BTN tv show pages and V3 api.
 // @author       Prism16
 // @downloadURL  https://github.com/PrismSixt33n/btn2sonarr/raw/main/btn2sonarr.user.js
@@ -27,6 +27,7 @@
     window.sonarrprofileid = GM_getValue('Profile ID', '');
     window.sonarrlanguageid = GM_getValue('Language ID', '');
     window.sonarrsearch = GM_getValue('Search', '');
+    window.sonarrseasons = GM_getValue('Seasons','');
 
 function settingsPanel() {
     let panel = document.createElement('div');
@@ -96,26 +97,31 @@ function settingsPanel() {
     });
 
     sonarrSettings.appendChild(searchInput);
-    sonarrSettings.appendChild(document.createElement('br'));
-    sonarrSettings.appendChild(document.createElement('br'));
 
-    let confirmButton = document.createElement('button');
-    confirmButton.innerHTML = 'Confirm';
-    confirmButton.addEventListener('click', function() {
+let confirmButton = document.createElement('button');
+confirmButton.innerHTML = 'Confirm';
+confirmButton.addEventListener('click', function() {
 
-        let inputs = sonarrSettings.getElementsByTagName('input');
-        for (let i = 0; i < inputs.length; i++) {
-            GM_setValue(labels[i], inputs[i].value);
-        }
+    let inputs = sonarrSettings.getElementsByTagName('input');
+    for (let i = 0; i < inputs.length; i++) {
+        GM_setValue(labels[i], inputs[i].value);
+    }
 
-        GM.notification({
-            text: 'The values have been saved successfully!',
-            title: 'Settings Saved',
-            timeout: 4000
-        });
+    // Print to console
+    console.log("Sonarr API Key: ", window.sonarrApi);
+    console.log("Sonarr URL: ", window.sonarrUrl);
+    console.log("Sonarr Root Path: ", window.sonarrpath);
+    console.log("Profile ID: ", window.sonarrprofileid);
+    console.log("Language ID: ", window.sonarrlanguageid);
+    console.log("Search: ", window.sonarrsearch);
+    console.log("Seasons: ", window.sonarrseasons);
+
+    GM.notification({
+        text: 'The values have been saved successfully!',
+        title: 'Settings Saved',
+        timeout: 4000
     });
-
-    sonarrSettings.appendChild(confirmButton);
+});
 
     box.appendChild(headDiv);
     box.appendChild(sonarrSettings);
@@ -133,12 +139,41 @@ function settingsPanel() {
 
     sonarrSettings.appendChild(img);
 
+let seasonsLabel = document.createElement('label');
+seasonsLabel.innerHTML = 'Seasons To Monitor';
+seasonsLabel.style.fontWeight = 'bold';
+seasonsLabel.style.marginLeft = '30px';
+sonarrSettings.appendChild(seasonsLabel);
+
+let seasonsSelect = document.createElement('select');
+seasonsSelect.style.marginLeft = '10px';
+let options = ['NONE', 'ALL', 'LATEST'];
+for (let i = 0; i < options.length; i++) {
+    let option = document.createElement('option');
+    option.value = options[i];
+    option.text = options[i];
+    seasonsSelect.appendChild(option);
+}
+seasonsSelect.value = GM_getValue('Seasons', '');
+seasonsSelect.addEventListener('change', function() {
+    GM_setValue('Seasons', this.value);
+    window.sonarrseasons = this.value;
+    console.log("Saved selection: " + this.value);
+});
+
+
+    sonarrSettings.appendChild(seasonsSelect);
+    sonarrSettings.appendChild(document.createElement('br'));
+    sonarrSettings.appendChild(confirmButton);
+    sonarrSettings.appendChild(document.createElement('br'));
+
     window.sonarrApi = GM_getValue('Sonarr API Key', '');
     window.sonarrUrl = GM_getValue('Sonarr URL', '');
     window.sonarrpath = GM_getValue('Sonarr Root Path', '');
     window.sonarrprofileid = GM_getValue('Profile ID', '');
     window.sonarrlanguageid = GM_getValue('Language ID', '');
     window.sonarrsearch = GM_getValue('Search', false);
+    window.sonarrseasons = GM_getValue('Seasons', '');
 }
 function profileids() {
     let sonarrApi = GM_getValue('Sonarr API Key', '');
@@ -396,6 +431,22 @@ function addToSonarr(result) {
             searchForMissingEpisodes: window.sonarrsearch
         }
     };
+if (window.sonarrseasons === "NONE") {
+    for (let i = 0; i < seriesData.seasons.length; i++) {
+        seriesData.seasons[i].monitored = false;
+    }
+} else if (window.sonarrseasons === "ALL") {
+    for (let i = 0; i < seriesData.seasons.length; i++) {
+        seriesData.seasons[i].monitored = true;
+    }
+} else if (window.sonarrseasons === "LATEST") {
+    for (let i = 0; i < seriesData.seasons.length; i++) {
+        seriesData.seasons[i].monitored = false;
+    }
+    if (seriesData.seasons.length > 0) {
+        seriesData.seasons[seriesData.seasons.length - 1].monitored = true;
+    }
+}
     let sonarrAddSeriesUrl = `${window.sonarrUrl}/api/v3/series/`;
     GM_xmlhttpRequest({
         method: "POST",
