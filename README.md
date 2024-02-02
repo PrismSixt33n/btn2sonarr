@@ -5,7 +5,7 @@ After learning a few bits of JavaScript I decided I would try and implement it m
 
 It doesn't have all the functionality that PTP to Radarr has but its easy to setup and it works just fine for a basic user case. I'm no JavaScript pro, far from it so the code could be cleaner and more compressed no doubt but it's here and it works.
 
-* First on installing, visit your edit profile page on BTN, you will see a new settings dialogue to enter the BTN 2 Sonarr settings which are pretty self explanatory.
+* First on installing, visit your edit profile page on BTN, you will see a new settings dialogue to enter the BTN2Sonarr settings which are pretty self explanatory.
 
 * As of v1.2 this now includes an option as to whether you want to "Search On Add" or not, v1.3 adds the choice of which seasons to monitor upon adding (None / All / Latest).
 
