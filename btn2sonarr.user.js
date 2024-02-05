@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         BTN 2 Sonarr
-// @version      1.3
+// @version      1.4
 // @description  Add shows directly to sonarr via the BTN tv show pages and V3 api.
 // @author       Prism16
 // @downloadURL  https://github.com/PrismSixt33n/btn2sonarr/raw/main/btn2sonarr.user.js
@@ -187,7 +187,6 @@ function profileids() {
         });
     } else {
         let apiUrl = sonarrUrl + '/api/v3/qualityprofile?apikey=' + sonarrApi;
-        console.log(apiUrl);
 
         let xhr = new XMLHttpRequest();
         xhr.open("GET", apiUrl, true);
@@ -202,6 +201,7 @@ function profileids() {
                     let id = ids[i];
                     output[name.name] = id.id;
                 }
+                console.log(output);
                 createModal(output);
             }
         }
@@ -221,7 +221,6 @@ function profileids() {
         });
     } else {
         let apiUrl = sonarrUrl + '/api/v3/languageprofile?apikey=' + sonarrApi;
-        console.log(apiUrl);
 
         let xhr = new XMLHttpRequest();
         xhr.open("GET", apiUrl, true);
@@ -236,6 +235,7 @@ function profileids() {
                     let id = ids[i];
                     output[name.name] = id.id;
                 }
+                console.log(output);
                 createModal(output);
             }
         }
