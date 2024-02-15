@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         BTN 2 Sonarr
-// @version      1.4
+// @version      1.5
 // @description  Add shows directly to sonarr via the BTN tv show pages and V3 api.
 // @author       Prism16
-// @downloadURL  https://github.com/PrismSixt33n/btn2sonarr/raw/main/btn2sonarr.user.js
-// @updateURL    https://github.com/PrismSixt33n/btn2sonarr/raw/main/btn2sonarr.user.js
 // @match        https://broadcasthe.net/series.php?id=*
 // @match        https://broadcasthe.net/user.php?action=edit*
+// @downloadURL  https://github.com/PrismSixt33n/btn2sonarr/raw/main/btn2sonarr.user.js
+// @updateURL    https://github.com/PrismSixt33n/btn2sonarr/raw/main/btn2sonarr.user.js
 // @icon         https://broadcasthe.net/favicon.ico
 // @require      https://cdn.jsdelivr.net/gh/sizzlemctwizzle/GM_config@43fd0fe4de1166f343883511e53546e87840aeaf/gm_config.js
 // @require      https://code.jquery.com/jquery-3.5.1.min.js
@@ -28,6 +28,7 @@
     window.sonarrlanguageid = GM_getValue('Language ID', '');
     window.sonarrsearch = GM_getValue('Search', '');
     window.sonarrseasons = GM_getValue('Seasons','');
+    window.useextendedpanel = GM_getValue('Extended','')
 
 function settingsPanel() {
     let panel = document.createElement('div');
@@ -115,6 +116,7 @@ confirmButton.addEventListener('click', function() {
     console.log("Language ID: ", window.sonarrlanguageid);
     console.log("Search: ", window.sonarrsearch);
     console.log("Seasons: ", window.sonarrseasons);
+    console.log("Extended: ", window.useextendedpanel);
 
     GM.notification({
         text: 'The values have been saved successfully!',
@@ -161,11 +163,31 @@ seasonsSelect.addEventListener('change', function() {
     console.log("Saved selection: " + this.value);
 });
 
-
     sonarrSettings.appendChild(seasonsSelect);
     sonarrSettings.appendChild(document.createElement('br'));
     sonarrSettings.appendChild(confirmButton);
     sonarrSettings.appendChild(document.createElement('br'));
+
+    let extendedLabel = document.createElement('label');
+extendedLabel.innerHTML = 'Use Extended TV Show Panel';
+extendedLabel.style.fontWeight = 'bold';
+sonarrSettings.appendChild(extendedLabel);
+
+let extendedInput = document.createElement('input');
+extendedInput.type = 'checkbox';
+extendedInput.style.marginLeft = '10px';
+extendedInput.checked = GM_getValue('Extended', false);
+extendedInput.addEventListener('change', function() {
+    GM_setValue('Extended', this.checked);
+    window.useextendedpanel = this.checked;
+    console.log("Saved selection: " + this.checked);
+});
+
+sonarrSettings.appendChild(extendedInput);
+sonarrSettings.appendChild(document.createElement('br'));
+sonarrSettings.appendChild(document.createElement('br'));
+sonarrSettings.appendChild(confirmButton);
+sonarrSettings.appendChild(document.createElement('br'));
 
     window.sonarrApi = GM_getValue('Sonarr API Key', '');
     window.sonarrUrl = GM_getValue('Sonarr URL', '');
@@ -174,6 +196,7 @@ seasonsSelect.addEventListener('change', function() {
     window.sonarrlanguageid = GM_getValue('Language ID', '');
     window.sonarrsearch = GM_getValue('Search', false);
     window.sonarrseasons = GM_getValue('Seasons', '');
+    window.useextendedpanel = GM_getValue('Extended','')
 }
 function profileids() {
     let sonarrApi = GM_getValue('Sonarr API Key', '');
@@ -358,60 +381,344 @@ function createTable(obj) {
     return table;
 }
 
-    function getTVDBIdAndPassToSonarr() {
-        let tvdbUrl = searchTVDBUrl();
-        if (tvdbUrl) {
-            GM_xmlhttpRequest({
-                method: "GET",
-                url: tvdbUrl,
-                onload: function(response) {
-                    let parser = new DOMParser();
-                    let doc = parser.parseFromString(response.responseText, "text/html");
-                    let spanElement = doc.querySelector("#series_basic_info > ul > li:nth-child(1) > span");
-                    if (spanElement) {
-                        let tvdbId = spanElement.textContent;
-                        let sonarrSeriesLookupUrl = `${window.sonarrUrl}/api/v3/series/lookup?term=tvdb:${tvdbId}`;
-                        GM_xmlhttpRequest({
-                            method: "GET",
-                            url: sonarrSeriesLookupUrl,
-                            headers: {
-                                "Content-Type": "application/json",
-                                "X-Api-Key": window.sonarrApi
-                            },
-                            onload: function(response) {
-                                let result = JSON.parse(response.responseText);
-                                let linkbox = document.querySelector('#content > div.thin > div.linkbox');
-                                let aElement = document.createElement('a');
-                                aElement.href = '#';
-                                if (result[0] && result[0].path) {
-                                    aElement.textContent = '[View In Sonarr]';
-                                    aElement.style.color = "#b1fcb1";
-                                    aElement.style.fontWeight = "bold";
-                                    let sonarrSeriesUrl = `${window.sonarrUrl}/series/${result[0].titleSlug}`;
-                                    aElement.href = sonarrSeriesUrl;
-                                    aElement.target = '_blank';
-                                } else {
-                                    aElement.textContent = '[Add to Sonarr]';
-                                    aElement.style.color = "#afe4ee";
-                                    aElement.style.fontWeight = "bold";
-                                    aElement.onclick = function() {
-                                        addToSonarr(result);
-                                        return false;
-                                    };
-                                }
-
+function getTVDBIdAndPassToSonarr() {
+    let tvdbUrl = searchTVDBUrl();
+    if (tvdbUrl) {
+        GM_xmlhttpRequest({
+            method: "GET",
+            url: tvdbUrl,
+            onload: function(response) {
+                let parser = new DOMParser();
+                let doc = parser.parseFromString(response.responseText, "text/html");
+                let spanElement = doc.querySelector("#series_basic_info > ul > li:nth-child(1) > span");
+                if (spanElement) {
+                    let tvdbId = spanElement.textContent;
+                    let sonarrSeriesLookupUrl = `${window.sonarrUrl}/api/v3/series/lookup?term=tvdb:${tvdbId}`;
+                    GM_xmlhttpRequest({
+                        method: "GET",
+                        url: sonarrSeriesLookupUrl,
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-Api-Key": window.sonarrApi
+                        },
+                        onload: function(response) {
+                            let result = JSON.parse(response.responseText);
+                            let linkbox = document.querySelector('#content > div.thin > div.linkbox');
+                            let aElement = document.createElement('a');
+                            aElement.href = '#';
+                            if (result[0] && result[0].path) {
+                                aElement.textContent = '[View In Sonarr]';
+                                aElement.style.color = "#b1fcb1";
+                                aElement.style.fontWeight = "bold";
+                                let sonarrSeriesUrl = `${window.sonarrUrl}/series/${result[0].titleSlug}`;
+                                aElement.href = sonarrSeriesUrl;
+                                aElement.target = '_blank';
                                 linkbox.appendChild(aElement);
-                            }
-                        });
-                    } else {
-                        console.log('No span element found for the specified selector');
-                    }
+                            } else if (window.useextendedpanel === false) {
+                                aElement.textContent = '[Add to Sonarr]';
+                                aElement.style.color = "#afe4ee";
+                                aElement.style.fontWeight = "bold";
+                                aElement.onclick = function() {
+                                    addToSonarr(result);
+                                    return false;
+                                };
+                                linkbox.appendChild(aElement);
+                            } else {
+    createSonarrPanel();
+}
+                        }
+                    });
+                } else {
+                    console.log('No span element found for the specified selector');
                 }
-            });
-        } else {
-            console.log('No TVDB URL found on this page');
-        }
+            }
+        });
+    } else {
+        console.log('No TVDB URL found on this page');
     }
+}
+
+var confirmButton;
+
+function createSonarrPanel(result) {
+    var settings = ['Path', 'Profile', 'Monitor'];
+    var torrentTables = document.querySelectorAll(".torrent_table#discog_table");
+    var lastTorrentTable = torrentTables[torrentTables.length - 1];
+
+    var boxDiv = document.createElement('div');
+    boxDiv.className = 'box';
+    var headDiv = document.createElement('div');
+    headDiv.className = 'head';
+    headDiv.textContent = 'Add To Sonarr';
+    headDiv.style.fontWeight = 'bold';
+    var sonarrPanelDiv = document.createElement('div');
+    sonarrPanelDiv.id = 'SonarrPanel';
+    sonarrPanelDiv.style.display = 'flex';
+    sonarrPanelDiv.style.justifyContent = 'space-between';
+    sonarrPanelDiv.style.flexWrap = 'wrap';
+
+    settings.forEach(function(setting, index) {
+        var settingDiv = document.createElement('div');
+        settingDiv.style.width = '30%';
+        settingDiv.style.display = 'flex';
+        settingDiv.style.flexDirection = 'column';
+        settingDiv.style.alignItems = 'center';
+        settingDiv.style.margin = '10px 0';
+        var select = document.createElement('select');
+        select.id = setting;
+        settingDiv.appendChild(select);
+        sonarrPanelDiv.appendChild(settingDiv);
+    });
+
+    confirmButton = document.createElement('button');
+    confirmButton.textContent = 'Add';
+    confirmButton.style.height = '30px';
+    confirmButton.style.alignSelf = 'flex-end';
+    confirmButton.style.marginTop = '0px';
+    confirmButton.style.display = 'none';
+    confirmButton.addEventListener('click', AddExtendedToSonarr);
+
+    sonarrPanelDiv.appendChild(confirmButton);
+
+    boxDiv.appendChild(headDiv);
+    boxDiv.appendChild(sonarrPanelDiv);
+    lastTorrentTable.parentNode.insertBefore(boxDiv, lastTorrentTable.nextSibling);
+
+    rootProfileSpanelChoice();
+    panelProfileIdChoice();
+    seasonPanelChoice();
+
+    document.getElementById('Path').addEventListener('change', checkSelections);
+    document.getElementById('Profile').addEventListener('change', checkSelections);
+    document.getElementById('Monitor').addEventListener('change', checkSelections);
+}
+
+function checkSelections() {
+    var path = document.getElementById('Path').value;
+    var profile = document.getElementById('Profile').value;
+    var monitor = document.getElementById('Monitor').value;
+
+    if (path && profile && monitor) {
+        confirmButton.style.display = 'block';
+    }
+}
+
+let extendedroot;
+
+function rootProfileSpanelChoice() {
+    let sonarrrootpathsUrl = `${window.sonarrUrl}/api/v3/rootfolder`;
+    GM_xmlhttpRequest({
+        method: "GET",
+        url: sonarrrootpathsUrl,
+        headers: {
+            "Content-Type": "application/json",
+            "X-Api-Key": window.sonarrApi
+        },
+        onload: function(response) {
+            let responseData = JSON.parse(response.responseText);
+            let select = document.getElementById('Path');
+
+            if (select.options.length > 1) {
+                return;
+            }
+
+            select.innerHTML = '';
+
+            let placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.text = 'Root Path :';
+            placeholder.disabled = true;
+            placeholder.selected = true;
+            select.appendChild(placeholder);
+
+            responseData.forEach(function(item) {
+                let option = document.createElement('option');
+                option.value = item.path;
+                option.text = item.path;
+                select.appendChild(option);
+            });
+
+            select.addEventListener('change', function() {
+                extendedroot = this.value;
+            });
+        }
+    });
+}
+
+
+let extendedprofile;
+
+function panelProfileIdChoice() {
+    let sonarrProfilesUrl = `${window.sonarrUrl}/api/v3/qualityprofile?apikey=${window.sonarrApi}`;
+    GM_xmlhttpRequest({
+        method: "GET",
+        url: sonarrProfilesUrl,
+        headers: {
+            "Content-Type": "application/json"
+        },
+        onload: function(response) {
+            let responseData = JSON.parse(response.responseText);
+            let select = document.getElementById('Profile');
+
+            if (select.options.length > 1) {
+                return;
+            }
+
+            select.innerHTML = '';
+
+            let placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.text = 'Profile :';
+            placeholder.disabled = true;
+            placeholder.selected = true;
+            select.appendChild(placeholder);
+
+            responseData.forEach(function(item) {
+                let option = document.createElement('option');
+                option.value = item.id;
+                option.text = item.name;
+                select.appendChild(option);
+            });
+
+            select.addEventListener('change', function() {
+                extendedprofile = this.value;
+            });
+        }
+    });
+}
+
+var extendedSeasonChoice;
+
+function seasonPanelChoice() {
+    var select = document.getElementById('Monitor');
+
+    if (select.options.length > 0) {
+        return;
+    }
+
+    var placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.text = 'Seasons :';
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    select.appendChild(placeholder);
+
+    var options = ["NONE", "ALL", "LATEST"];
+
+    for (var i = 0; i < options.length; i++) {
+        var option = document.createElement('option');
+        option.value = options[i];
+        option.text = options[i];
+        select.appendChild(option);
+    }
+
+    select.addEventListener('change', function() {
+        if (this.value !== '') {
+            extendedSeasonChoice = this.value;
+            placeholder.disabled = false;
+            placeholder.selected = false;
+            this.options[this.selectedIndex].selected = true;
+        }
+    });
+}
+
+function AddExtendedToSonarr(result) {
+    let tvdbUrl = searchTVDBUrl();
+    if (tvdbUrl) {
+        GM_xmlhttpRequest({
+            method: "GET",
+            url: tvdbUrl,
+            onload: function(response) {
+                let parser = new DOMParser();
+                let doc = parser.parseFromString(response.responseText, "text/html");
+                let spanElement = doc.querySelector("#series_basic_info > ul > li:nth-child(1) > span");
+                if (spanElement) {
+                    let tvdbId = spanElement.textContent;
+                    let sonarrSeriesLookupUrl = `${window.sonarrUrl}/api/v3/series/lookup?term=tvdb:${tvdbId}`;
+                    GM_xmlhttpRequest({
+                        method: "GET",
+                        url: sonarrSeriesLookupUrl,
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-Api-Key": window.sonarrApi
+                        },
+onload: function(response) {
+    let jsonResponse = JSON.parse(response.responseText);
+    window.sonarrResponse = jsonResponse;
+
+    let fullPath = extendedroot + '/' + window.sonarrResponse[0].title;
+
+    let seriesData = {
+        title: window.sonarrResponse[0].title,
+        seasons: window.sonarrResponse[0].seasons,
+        path: fullPath,
+        qualityProfileId: extendedprofile,
+        languageProfileId: window.sonarrlanguageid,
+        images: window.sonarrResponse[0].images,
+        tvdbId: window.sonarrResponse[0].tvdbId,
+        titleSlug: window.sonarrResponse[0].titleSlug,
+        monitored: true,
+        seasonFolder: true,
+        addOptions: {
+            ignoreEpisodesWithFiles: false,
+            ignoreEpisodesWithoutFiles: false,
+            searchForMissingEpisodes: window.sonarrsearch
+        }
+    };
+
+                            if (extendedSeasonChoice === "NONE") {
+                                for (let i = 0; i < seriesData.seasons.length; i++) {
+                                    seriesData.seasons[i].monitored = false;
+                                }
+                            } else if (extendedSeasonChoice === "ALL") {
+                                for (let i = 0; i < seriesData.seasons.length; i++) {
+                                    seriesData.seasons[i].monitored = true;
+                                }
+                            } else if (extendedSeasonChoice === "LATEST") {
+                                for (let i = 0; i < seriesData.seasons.length; i++) {
+                                    seriesData.seasons[i].monitored = false;
+                                }
+                                if (seriesData.seasons.length > 0) {
+                                    seriesData.seasons[seriesData.seasons.length - 1].monitored = true;
+                                }
+                            }
+
+                            let sonarrAddSeriesUrl = `${window.sonarrUrl}/api/v3/series/`;
+                            GM_xmlhttpRequest({
+                                method: "POST",
+                                url: sonarrAddSeriesUrl,
+                                data: JSON.stringify(seriesData),
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "X-Api-Key": window.sonarrApi
+                                },
+                                onload: function(response) {
+                                    let responseData = JSON.parse(response.responseText);
+                                    if (responseData.title === window.sonarrResponse[0].title) {
+                                        GM_notification({
+                                            text: `Please Click This Notification To Refresh The Page..`,
+                                            title: 'BTN2Sonarr - Added',
+                                            timeout: 7500,
+                                            onclick: function() {
+                                                location.reload();
+                                            }
+                                        });
+                                    } else {
+                                        GM_notification({
+                                            text: `Failed to add ${window.sonarrResponse[0].title}. Possibly Already Added..`,
+                                            title: 'BTN 2 Sonarr',
+                                            timeout: 2500
+                                        });
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+        });
+    }
+}
 
 function addToSonarr(result) {
     let fullPath = window.sonarrpath + '/' + result[0].title;
@@ -425,6 +732,7 @@ function addToSonarr(result) {
         tvdbId: result[0].tvdbId,
         titleSlug: result[0].titleSlug,
         monitored: true,
+        seasonFolder: true,
         addOptions: {
             ignoreEpisodesWithFiles: false,
             ignoreEpisodesWithoutFiles: false,
