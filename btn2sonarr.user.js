@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         BTN 2 Sonarr
-// @version      1.5
+// @version      1.6
 // @description  Add shows directly to sonarr via the BTN tv show pages and V3 api.
 // @author       Prism16
 // @match        https://broadcasthe.net/series.php?id=*
@@ -29,6 +29,7 @@
     window.sonarrsearch = GM_getValue('Search', '');
     window.sonarrseasons = GM_getValue('Seasons','');
     window.useextendedpanel = GM_getValue('Extended','')
+    window.sonarrpanelocation = GM_getValue('panelLocation','')
 
 function settingsPanel() {
     let panel = document.createElement('div');
@@ -108,15 +109,6 @@ confirmButton.addEventListener('click', function() {
         GM_setValue(labels[i], inputs[i].value);
     }
 
-    // Print to console
-    console.log("Sonarr API Key: ", window.sonarrApi);
-    console.log("Sonarr URL: ", window.sonarrUrl);
-    console.log("Sonarr Root Path: ", window.sonarrpath);
-    console.log("Profile ID: ", window.sonarrprofileid);
-    console.log("Language ID: ", window.sonarrlanguageid);
-    console.log("Search: ", window.sonarrsearch);
-    console.log("Seasons: ", window.sonarrseasons);
-    console.log("Extended: ", window.useextendedpanel);
 
     GM.notification({
         text: 'The values have been saved successfully!',
@@ -168,7 +160,7 @@ seasonsSelect.addEventListener('change', function() {
     sonarrSettings.appendChild(confirmButton);
     sonarrSettings.appendChild(document.createElement('br'));
 
-    let extendedLabel = document.createElement('label');
+let extendedLabel = document.createElement('label');
 extendedLabel.innerHTML = 'Use Extended TV Show Panel';
 extendedLabel.style.fontWeight = 'bold';
 sonarrSettings.appendChild(extendedLabel);
@@ -181,7 +173,29 @@ extendedInput.addEventListener('change', function() {
     GM_setValue('Extended', this.checked);
     window.useextendedpanel = this.checked;
     console.log("Saved selection: " + this.checked);
+    panelLocationSelect.style.display = this.checked ? 'inline' : 'none';
 });
+
+sonarrSettings.appendChild(extendedInput);
+
+let panelLocationSelect = document.createElement('select');
+panelLocationSelect.style.marginLeft = '10px';
+panelLocationSelect.style.display = extendedInput.checked ? 'inline' : 'none';
+let panelOptions = ['Above Table', 'Below Table'];
+for (let i = 0; i < panelOptions.length; i++) {
+    let option = document.createElement('option');
+    option.value = panelOptions[i];
+    option.text = panelOptions[i];
+    panelLocationSelect.appendChild(option);
+}
+panelLocationSelect.value = GM_getValue('panelLocation', '');
+panelLocationSelect.addEventListener('change', function() {
+    GM_setValue('panelLocation', this.value);
+    window.sonarrpanelocation = this.value;
+    console.log("Saved selection: " + this.value);
+});
+
+sonarrSettings.appendChild(panelLocationSelect);
 
 sonarrSettings.appendChild(extendedInput);
 sonarrSettings.appendChild(document.createElement('br'));
@@ -482,7 +496,12 @@ function createSonarrPanel(result) {
 
     boxDiv.appendChild(headDiv);
     boxDiv.appendChild(sonarrPanelDiv);
-    lastTorrentTable.parentNode.insertBefore(boxDiv, lastTorrentTable.nextSibling);
+
+    if (window.sonarrpanelocation === 'Above Table') {
+        torrentTables[0].parentNode.insertBefore(boxDiv, torrentTables[0]);
+    } else {
+        lastTorrentTable.parentNode.insertBefore(boxDiv, lastTorrentTable.nextSibling);
+    }
 
     rootProfileSpanelChoice();
     panelProfileIdChoice();
